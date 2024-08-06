@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>射击小游戏</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            border: 1px solid #fff;
+        }
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        #gameOver button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="gameOver">
+        <h1>游戏结束</h1>
+        <button onclick="restartGame()">重新开始</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let superman = {
+            x: 50,
+            y: canvas.height / 2,
+            width: 50,
+            height: 50,
+            speed: 5
+        };
+
+        let zombies = [];
+        let bullets = [];
+        let gameOver = false;
+
+        function drawSuperman() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(superman.x, superman.y, superman.width, superman.height);
+        }
+
+        function drawZombies() {
+            zombies.forEach(zombie => {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(zombie.x, zombie.y, zombie.width, zombie.height);
+            });
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function moveSuperman() {
+            if (keys['ArrowUp'] && superman.y > 0) {
+                superman.y -= superman.speed;
+            }
+            if (keys['ArrowDown'] && superman.y < canvas.height - superman.height) {
+                superman.y += superman.speed;
+            }
+        }
+
+        function moveZombies() {
+            zombies.forEach((zombie, index) => {
+                zombie.x -= zombie.speed;
+                if (zombie.x + zombie.width < 0) {
+                    zombies.splice(index, 1);
+                }
+                if (zombie.x < superman.x + superman.width &&
+                    zombie.x + zombie.width > superman.x &&
+                    zombie.y < superman.y + superman.height &&
+                    zombie.y + zombie.height > superman.y) {
+                    endGame();
+                }
+            });
+        }
+
+        function moveBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.x += bullet.speed;
+                if (bullet.x > canvas.width) {
+                    bullets.splice(index, 1);
+                }
+                zombies.forEach((zombie, zIndex) => {
+                    if (bullet.x < zombie.x + zombie.width &&
+                        bullet.x + bullet.width > zombie.x &&
+                        bullet.y < zombie.y + zombie.height &&
+                        bullet.y + bullet.height > zombie.y) {
+                        zombies.splice(zIndex, 1);
+                        bullets.splice(index, 1);
+                    }
+                });
+            });
+        }
+
+        function spawnZombie() {
+            let zombie = {
+                x: canvas.width,
+                y: Math.random() * (canvas.height - 50),
+                width: 50,
+                height: 50,
+                speed: 3
+            };
+            zombies.push(zombie);
+        }
+
+        function shootBullet() {
+            let bullet = {
+                x: superman.x + superman.width,
+                y: superman.y + superman.height / 2 - 5,
+                width: 10,
+                height: 10,
+                speed: 7
+            };
+            bullets.push(bullet);
+        }
+
+        let keys = {};
+
+        window.addEventListener('keydown', function (e) {
+            keys[e.key] = true;
+            if (e.key === ' ') {
+                shootBullet();
+            }
+        });
+
+        window.addEventListener('keyup', function (e) {
+            keys[e.key] = false;
+        });
+
+        function endGame() {
+            gameOver = true;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function restartGame() {
+            superman = { x: 50, y: canvas.height / 2, width: 50, height: 50, speed: 5 };
+            zombies = [];
+            bullets = [];
+            gameOver = false;
+            document.getElementById('gameOver').style.display = 'none';
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            moveSuperman();
+            moveZombies();
+            moveBullets();
+
+            drawSuperman();
+            drawZombies();
+            drawBullets();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        setInterval(spawnZombie, 2000);
+        gameLoop();
+    </script>
+</body>
+</html>
